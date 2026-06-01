@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jemuran Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+    <style>
+        :root {
+            --bg: #111217;
+            --surface: #181b1f;
+            --surface2: #1f2329;
+            --border: #2a2e35;
+            --text: #d8d9da;
+            --text2: #8e9199;
+            --text3: #5c5f66;
+            --blue: #5794f2;
+            --blue-bg: #132033;
+            --amber: #e5a43c;
+            --amber-bg: #251e10;
+            --green: #73bf69;
+            --green-bg: #152818;
+            --red: #e24d4c;
+            --red-bg: #2b1416;
+            --radius-sm: 4px;
+            --radius: 6px;
+            --radius-lg: 8px;
+            --sp-xs: 4px;
+            --sp-sm: 8px;
+            --sp: 16px;
+            --sp-lg: 24px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; overflow: hidden; }
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            font-weight: 400;
+            background: var(--bg);
+            color: var(--text);
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            grid-template-rows: 48px 1fr;
+        }
+
+        /* ── Topbar ── */
+        .topbar {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 var(--sp-lg);
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            z-index: 10;
+        }
+        .topbar h1 { font-size: 0.95rem; font-weight: 600; color: var(--text); letter-spacing: -0.01em; }
+        .topbar-right { display: flex; align-items: center; gap: 10px; }
+        .conn-dot { width: 7px; height: 7px; border-radius: 50%; transition: background 0.3s; }
+        .conn-dot.ok { background: var(--green); box-shadow: 0 0 6px var(--green); }
+        .conn-dot.err { background: var(--red); box-shadow: 0 0 6px var(--red); }
+        .conn-label { font-size: 0.78rem; font-weight: 500; color: var(--text2); }
+        .topbar-time { font-size: 0.78rem; color: var(--text3); font-variant-numeric: tabular-nums; }
+
+        /* ── Left Panel ── */
+        .left-panel {
+            grid-row: 2;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: var(--sp-lg) var(--sp);
+            gap: var(--sp-lg);
+            overflow-y: auto;
+        }
+        .ring-wrap { position: relative; width: 180px; height: 180px; flex-shrink: 0; }
+        .ring-wrap svg { transform: rotate(-90deg); }
+        .ring-bg { fill: none; stroke: var(--surface2); stroke-width: 12; }
+        .ring-fill { fill: none; stroke: var(--blue); stroke-width: 12; stroke-linecap: round; transition: stroke-dashoffset 0.6s ease, stroke 0.4s; }
+        .ring-center {
+            position: absolute; inset: 0;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+        }
+        .ring-value { font-size: 2.6rem; font-weight: 600; line-height: 1; color: var(--text); }
+        .ring-label { font-size: 0.72rem; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px; }
+        .servo-card { background: var(--surface2); border-radius: var(--radius); padding: var(--sp); text-align: center; width: 100%; }
+        .servo-label { font-size: 0.7rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text3); margin-bottom: var(--sp-xs); }
+        .servo-state { font-size: 1.6rem; font-weight: 600; transition: color 0.3s; }
+        .servo-state.IN { color: var(--red); }
+        .servo-state.OUT { color: var(--green); }
+
+        /* ── Right Content ── */
+        .right-content {
+            grid-row: 2; overflow-y: auto; overflow-x: hidden;
+            display: flex; flex-direction: column; gap: var(--sp); padding: var(--sp-lg);
+        }
+
+        /* Status Hero */
+        .status-hero {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px var(--sp-lg); border-radius: var(--radius-lg);
+            flex-shrink: 0;
+            border-left: 4px solid transparent;
+        }
+        .status-hero.safe  { background: var(--green-bg); border-left-color: var(--green); }
+        .status-hero.warn  { background: var(--amber-bg); border-left-color: var(--amber); }
+        .status-hero.danger { background: var(--red-bg);  border-left-color: var(--red); }
+        .status-text h2 { font-size: 1.05rem; font-weight: 600; line-height: 1.3; }
+        .status-hero.safe  .status-text h2 { color: var(--green); }
+        .status-hero.warn  .status-text h2 { color: var(--amber); }
+        .status-hero.danger .status-text h2 { color: var(--red); }
+        .status-sub { font-size: 0.8rem; color: var(--text2); margin-top: 2px; }
+        .status-badge {
+            padding: 4px 12px; border-radius: 999px; font-size: 0.78rem; font-weight: 600;
+            background: rgba(0,0,0,0.3); color: var(--text); white-space: nowrap;
+        }
+
+        /* Metric Bars */
+        .metrics { display: flex; flex-direction: column; gap: var(--sp-sm); flex-shrink: 0; }
+        .metric-row {
+            display: flex; align-items: center; gap: var(--sp);
+            background: var(--surface); border-radius: var(--radius); padding: 10px var(--sp);
+        }
+        .metric-icon { width: 76px; font-size: 0.75rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; flex-shrink: 0; color: var(--text2); }
+        .metric-bar-wrap { flex: 1; height: 8px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+        .metric-bar { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
+        .metric-bar.rain { background: var(--blue); }
+        .metric-bar.lux { background: var(--amber); }
+        .metric-bar.hum { background: var(--green); }
+        .metric-val { width: 100px; font-size: 0.82rem; font-weight: 500; font-variant-numeric: tabular-nums; text-align: right; flex-shrink: 0; color: var(--text); }
+
+        /* Chart */
+        .chart-card { background: var(--surface); border-radius: var(--radius-lg); padding: var(--sp) var(--sp-lg) var(--sp) var(--sp); flex-shrink: 0; }
+        .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--sp-sm); }
+        .chart-header h3 { font-size: 0.85rem; font-weight: 500; color: var(--text2); }
+        .chart-wrap { position: relative; width: 100%; height: 300px; }
+        .chart-wrap canvas { width: 100% !important; }
+
+        /* Bottom Row */
+        .bottom-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp); flex-shrink: 0; }
+        .panel { background: var(--surface); border-radius: var(--radius-lg); padding: var(--sp); }
+        .panel h3 { font-size: 0.85rem; font-weight: 500; color: var(--text2); margin-bottom: var(--sp); }
+
+        /* Timeline */
+        .timeline { position: relative; padding-left: var(--sp-lg); max-height: 220px; overflow-y: auto; }
+        .timeline::before { content: ''; position: absolute; left: 7px; top: 4px; bottom: 4px; width: 1px; background: var(--border); }
+        .tl-item { position: relative; margin-bottom: 10px; padding-left: var(--sp); font-size: 0.78rem; }
+        .tl-item:last-child { margin-bottom: 0; }
+        .tl-dot { position: absolute; left: 0; top: 4px; width: 8px; height: 8px; border-radius: 50%; transform: translateX(-15px); }
+        .tl-dot.auto { background: var(--green); }
+        .tl-dot.manual { background: var(--amber); }
+        .tl-time { font-size: 0.7rem; color: var(--text3); font-variant-numeric: tabular-nums; margin-bottom: 1px; }
+        .tl-desc { color: var(--text); line-height: 1.4; }
+        .tl-type { display: inline-block; font-size: 0.65rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; padding: 1px 6px; border-radius: 3px; margin-right: 4px; background: var(--surface2); color: var(--text2); }
+
+        /* Controls */
+        .ctrl-btns { display: flex; flex-direction: column; gap: var(--sp-sm); margin-bottom: var(--sp); }
+        .ctrl-btn {
+            width: 100%; padding: 10px var(--sp); border: none; border-radius: var(--radius);
+            font-family: 'Inter', system-ui, sans-serif; font-size: 0.82rem; font-weight: 500;
+            cursor: pointer; color: #fff;
+            transition: transform 0.1s, box-shadow 0.1s, opacity 0.15s;
+        }
+        .ctrl-btn:hover { transform: scale(1.015); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        .ctrl-btn:active { transform: scale(0.98); opacity: 0.9; }
+        .ctrl-btn.in { background: var(--red); }
+        .ctrl-btn.out { background: var(--green); color: #111217; }
+        .ctrl-btn.auto { background: var(--blue); color: #111217; }
+        .slider-row { margin-top: var(--sp); }
+        .slider-label { display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--text2); margin-bottom: var(--sp-xs); }
+        .slider-val { font-weight: 600; color: var(--blue); font-variant-numeric: tabular-nums; }
+        .slider-row input[type=range] { width: 100%; accent-color: var(--blue); height: 4px; cursor: pointer; }
+
+        /* Toast */
+        .toast-container { position: fixed; bottom: var(--sp-lg); right: var(--sp-lg); z-index: 999; display: flex; flex-direction: column; gap: var(--sp-sm); pointer-events: none; }
+        .toast {
+            background: #1f2329; color: var(--text); padding: var(--sp-sm) var(--sp);
+            border-radius: var(--radius); font-size: 0.82rem; font-weight: 500;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4); border: 1px solid var(--border);
+            animation: toastIn 0.3s ease, toastOut 0.3s ease 2.7s forwards; pointer-events: auto;
+        }
+        @keyframes toastIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes toastOut { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(12px); } }
+
+        /* ── Responsive ── */
+        @media (max-width: 900px) { .bottom-row { grid-template-columns: 1fr; } .chart-wrap { height: 260px; } }
+        @media (max-width: 768px) {
+            body { grid-template-columns: 1fr; grid-template-rows: 48px auto 1fr; overflow: auto; }
+            .left-panel { grid-row: 2; flex-direction: row; flex-wrap: wrap; justify-content: center; padding: var(--sp); gap: var(--sp); border-right: none; border-bottom: 1px solid var(--border); }
+            .ring-wrap { width: 120px; height: 120px; }
+            .ring-value { font-size: 1.8rem; }
+            .servo-card { width: auto; min-width: 100px; }
+            .right-content { grid-row: 3; padding: var(--sp); }
+            .status-hero { flex-direction: column; text-align: center; gap: var(--sp-sm); }
+            .metric-icon { width: 56px; font-size: 0.7rem; }
+            .metric-val { width: 80px; font-size: 0.75rem; }
+        }
+    </style>
+</head>
+<body>
+
+<header class="topbar">
+    <h1>Jemuran Otomatis</h1>
+    <div class="topbar-right">
+        <span class="conn-dot ok" id="connDot"></span>
+        <span class="conn-label" id="connLabel">Online</span>
+        <span class="topbar-time" id="updateTime">--:--:--</span>
+    </div>
+</header>
+
+<aside class="left-panel">
+    <div class="ring-wrap">
+        <svg viewBox="0 0 180 180" width="180" height="180">
+            <circle class="ring-bg" cx="90" cy="90" r="78"/>
+            <circle class="ring-fill" id="ringArc" cx="90" cy="90" r="78" stroke-dasharray="490" stroke-dashoffset="490"/>
+        </svg>
+        <div class="ring-center">
+            <div class="ring-value" id="ringVal">--</div>
+            <div class="ring-label">Rain</div>
+        </div>
+    </div>
+    <div class="servo-card">
+        <div class="servo-label">Servo</div>
+        <div class="servo-state" id="servoState">--</div>
+    </div>
+</aside>
+
+<main class="right-content">
+
+    <div class="status-hero safe" id="statusHero">
+        <div class="status-text">
+            <h2 id="statusTitle">Cuaca Aman</h2>
+            <div class="status-sub" id="statusSub">Jemuran di Luar</div>
+        </div>
+        <span class="status-badge" id="statusBadge">Servo: --</span>
+    </div>
+
+    <div class="metrics">
+        <div class="metric-row">
+            <span class="metric-icon">Rain</span>
+            <div class="metric-bar-wrap"><div class="metric-bar rain" id="rainBar" style="width:0%"></div></div>
+            <span class="metric-val" id="rainVal">-- / 1023</span>
+        </div>
+        <div class="metric-row">
+            <span class="metric-icon">Lux</span>
+            <div class="metric-bar-wrap"><div class="metric-bar lux" id="luxBar" style="width:0%"></div></div>
+            <span class="metric-val" id="luxVal">-- / 1023 lx</span>
+        </div>
+        <div class="metric-row">
+            <span class="metric-icon">Humidity</span>
+            <div class="metric-bar-wrap"><div class="metric-bar hum" id="humBar" style="width:0%"></div></div>
+            <span class="metric-val" id="humVal">--%</span>
+        </div>
+    </div>
+
+    <div class="chart-card">
+        <div class="chart-header"><h3>Riwayat 1 Jam Terakhir</h3></div>
+        <div class="chart-wrap"><canvas id="historyChart"></canvas></div>
+    </div>
+
+    <div class="bottom-row">
+        <div class="panel">
+            <h3>Log Kejadian</h3>
+            <div class="timeline" id="timeline"></div>
+        </div>
+        <div class="panel">
+            <h3>Kontrol</h3>
+            <div class="ctrl-btns">
+                <button class="ctrl-btn in" onclick="overrideServo('IN')">Paksa Masuk</button>
+                <button class="ctrl-btn out" onclick="overrideServo('OUT')">Paksa Keluar</button>
+                <button class="ctrl-btn auto" onclick="overrideServo('AUTO')">Mode Otomatis</button>
+            </div>
+            <div class="slider-row">
+                <div class="slider-label"><span>Threshold Hujan</span><span class="slider-val" id="sliderVal">400</span></div>
+                <input type="range" min="100" max="900" value="400" id="rainThreshold" oninput="document.getElementById('sliderVal').textContent=this.value">
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+const CIRCUMFERENCE = 2 * Math.PI * 78; // ~490
+
+let chart;
+
+function downsample(arr, n) {
+    if (arr.length <= n) return arr;
+    const step = (arr.length - 1) / (n - 1);
+    const out = [];
+    for (let i = 0; i < n; i++) out.push(arr[Math.round(i * step)]);
+    return out;
+}
+
+function initChart() {
+    const ctx = document.getElementById('historyChart').getContext('2d');
+    chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [
+                {
+                    label: 'Rain (0-1023)',
+                    borderColor: '#5794f2',
+                    backgroundColor: '#5794f2',
+                    tension: 0.2,
+                    fill: false,
+                    data: [],
+                    yAxisID: 'y',
+                    pointRadius: 0,
+                    pointHoverRadius: 5,
+                    borderWidth: 2,
+                },
+                {
+                    label: 'Lux (0-1023)',
+                    borderColor: '#e5a43c',
+                    backgroundColor: '#e5a43c',
+                    tension: 0.2,
+                    fill: false,
+                    data: [],
+                    yAxisID: 'y',
+                    pointRadius: 0,
+                    pointHoverRadius: 5,
+                    borderWidth: 2,
+                },
+                {
+                    label: 'Humidity (0-100%)',
+                    borderColor: '#73bf69',
+                    backgroundColor: '#73bf69',
+                    tension: 0.2,
+                    fill: false,
+                    data: [],
+                    yAxisID: 'y1',
+                    pointRadius: 0,
+                    pointHoverRadius: 5,
+                    borderWidth: 2,
+                    borderDash: [6, 3],
+                },
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { intersect: false, mode: 'index' },
+            scales: {
+                x: {
+                    ticks: { color: '#5c5f66', maxTicksLimit: 10, font: { size: 11 }, autoSkip: true },
+                    grid: { color: '#2a2e3522' },
+                },
+                y: {
+                    type: 'linear', position: 'left',
+                    title: { display: true, text: 'Rain / Lux', color: '#8e9199', font: { size: 10 } },
+                    ticks: { color: '#8e9199', maxTicksLimit: 5, font: { size: 11 } },
+                    grid: { color: '#2a2e35' },
+                    min: 0, max: 1050, grace: '5%',
+                },
+                y1: {
+                    type: 'linear', position: 'right',
+                    title: { display: true, text: 'Humidity %', color: '#73bf69', font: { size: 10 } },
+                    ticks: { color: '#73bf69', maxTicksLimit: 5, font: { size: 11 } },
+                    grid: { display: false },
+                    min: 0, max: 105, grace: '5%',
+                }
+            },
+            plugins: {
+                legend: {
+                    labels: { color: '#8e9199', usePointStyle: true, pointStyleWidth: 8, padding: 16, font: { size: 11 } },
+                    align: 'center', position: 'top',
+                },
+            },
+            animation: false,
+        }
+    });
+}
+
+function fmtShort(ts) {
+    if (!ts) return '--:--';
+    const d = new Date(ts + (ts.includes('Z') ? '' : 'Z'));
+    return d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false });
+}
+
+function showToast(message) {
+    const container = document.getElementById('toastContainer');
+    const el = document.createElement('div');
+    el.className = 'toast';
+    el.textContent = message;
+    container.appendChild(el);
+    setTimeout(() => { if (el.parentNode) el.remove(); }, 3100);
+}
+
+async function overrideServo(action) {
+    try {
+        const res = await fetch('/api/override', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action }),
+        });
+        if (res.ok) {
+            const labels = { IN: 'Servo masuk', OUT: 'Servo keluar', AUTO: 'Mode otomatis' };
+            showToast((labels[action] || 'Override') + ' — berhasil');
+        }
+    } catch (e) { showToast('Gagal mengirim override'); }
+}
+
+function updateRing(value) {
+    const arc = document.getElementById('ringArc');
+    const pct = Math.min(1, Math.max(0, value / 1023));
+    arc.setAttribute('stroke-dashoffset', CIRCUMFERENCE * (1 - pct));
+    if (value < 400) arc.style.stroke = '#5794f2';
+    else if (value < 700) arc.style.stroke = '#e5a43c';
+    else arc.style.stroke = '#e24d4c';
+    document.getElementById('ringVal').textContent = value;
+}
+
+function updateServo(state) {
+    const el = document.getElementById('servoState');
+    el.textContent = state;
+    el.className = 'servo-state ' + state;
+}
+
+function updateStatusHero(rain, hum, servo) {
+    const hero = document.getElementById('statusHero');
+    const title = document.getElementById('statusTitle');
+    const sub = document.getElementById('statusSub');
+    if (rain >= 400) {
+        hero.className = 'status-hero danger';
+        title.textContent = 'Hujan Terdeteksi';
+        sub.textContent = 'Jemuran Masuk';
+    } else if (hum > 75) {
+        hero.className = 'status-hero warn';
+        title.textContent = 'Kelembapan Tinggi';
+        sub.textContent = 'Waspada';
+    } else {
+        hero.className = 'status-hero safe';
+        title.textContent = 'Cuaca Aman';
+        sub.textContent = 'Jemuran di Luar';
+    }
+    document.getElementById('statusBadge').textContent = 'Servo: ' + servo;
+}
+
+function updateMetrics(rain, lux, hum) {
+    document.getElementById('rainVal').textContent = rain + ' / 1023';
+    document.getElementById('rainBar').style.width = (rain / 1023 * 100) + '%';
+    document.getElementById('luxVal').textContent = lux + ' / 1023 lx';
+    document.getElementById('luxBar').style.width = (lux / 1023 * 100) + '%';
+    document.getElementById('humVal').textContent = hum + '%';
+    document.getElementById('humBar').style.width = hum + '%';
+}
+
+function updateTimeline(events) {
+    const container = document.getElementById('timeline');
+    container.innerHTML = events.slice(0, 8).map(e =>
+        `<div class="tl-item">
+            <span class="tl-dot ${e.trigger === 'auto' ? 'auto' : 'manual'}"></span>
+            <div class="tl-time">${fmtShort(e.timestamp)}</div>
+            <div class="tl-desc"><span class="tl-type">${e.event_type}</span>${e.description || '--'}</div>
+        </div>`
+    ).join('');
+}
+
+function setOnline(ok) {
+    const dot = document.getElementById('connDot');
+    const label = document.getElementById('connLabel');
+    if (ok) {
+        dot.className = 'conn-dot ok'; label.textContent = 'Online'; label.style.color = '';
+    } else {
+        dot.className = 'conn-dot err'; label.textContent = 'Offline'; label.style.color = '#e24d4c';
+    }
+}
+
+async function fetchData() {
+    const timeEl = document.getElementById('updateTime');
+    try {
+        const [latestRes, logsRes, eventsRes] = await Promise.all([
+            fetch('/api/latest'), fetch('/api/logs'), fetch('/api/events'),
+        ]);
+        const [latest, logs, events] = await Promise.all([latestRes.json(), logsRes.json(), eventsRes.json()]);
+
+        setOnline(true);
+        timeEl.textContent = new Date().toLocaleTimeString('id-ID', { hour12: false });
+
+        if (latest) {
+            updateRing(latest.rain_value);
+            updateServo(latest.servo_state);
+            updateStatusHero(latest.rain_value, latest.humidity, latest.servo_state);
+            updateMetrics(latest.rain_value, latest.lux_value, latest.humidity);
+        }
+
+        const sorted = [...logs].reverse();
+        const MAX = 20;
+        const step = sorted.length > MAX ? Math.ceil(sorted.length / MAX) : 1;
+        const sampled = sorted.filter((_, i) => i % step === 0);
+
+        chart.data.labels = sampled.map(r => fmtShort(r.timestamp));
+        chart.data.datasets[0].data = sampled.map(r => r.rain_value);
+        chart.data.datasets[1].data = sampled.map(r => r.lux_value);
+        chart.data.datasets[2].data = sampled.map(r => r.humidity);
+        chart.update('none');
+
+        updateTimeline(events);
+    } catch (err) {
+        console.error(err);
+        setOnline(false);
+        timeEl.textContent = '--:--:--';
+    }
+}
+
+initChart();
+fetchData();
+setInterval(fetchData, 3000);
+</script>
+</body>
+</html>
