@@ -4,6 +4,28 @@ Real-time monitoring dashboard for an automated clothesline system. Reads sensor
 
 ---
 
+## Fresh Install (After Downloading ZIP or Cloning)
+
+If you just downloaded this project, run these 3 commands in the project folder:
+
+```bash
+pip install -r requirements.txt
+python database.py
+python app.py
+```
+
+Then open `http://localhost:5000/api/demo/seed` to fill the database with sample data, and `http://localhost:5000` to see the dashboard.
+
+If you have Arduino hardware connected, also run in a second terminal:
+
+```bash
+python serial_reader.py --port COM3
+```
+
+(Replace `COM3` with your actual Arduino port.)
+
+---
+
 ## Quickstart (Basic Hardware)
 
 ### What you need
