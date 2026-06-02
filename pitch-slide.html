@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Software Prototype -- Jemuran Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #0a0b0e;
+    color: #e0e0e0;
+    display: flex; align-items: center; justify-content: center;
+    min-height: 100vh; padding: 2rem;
+}
+.slide {
+    width: 1280px; min-height: 720px;
+    background: linear-gradient(135deg, #111318 0%, #16191f 100%);
+    border: 1px solid #252830;
+    border-radius: 12px;
+    padding: 48px 56px;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    gap: 32px;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+}
+
+/* HEADER */
+.header {
+    display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px solid #252830; padding-bottom: 24px;
+}
+.header h1 { font-size: 1.65rem; font-weight: 700; color: #fff; }
+.header .tag {
+    padding: 6px 16px; border-radius: 999px;
+    font-size: 0.75rem; font-weight: 600; letter-spacing: 0.05em;
+    background: #1c2a3a; color: #5794f2;
+}
+
+/* BODY -- 3 columns */
+.body { display: grid; grid-template-columns: 1.15fr 0.85fr 1fr; gap: 28px; }
+
+.column {
+    background: #16191f;
+    border-radius: 10px;
+    border: 1px solid #20242c;
+    padding: 24px;
+}
+.col-title {
+    font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.08em; color: #5c6068; margin-bottom: 16px;
+}
+
+/* COLUMN 1 -- Dashboard Preview */
+.dash-frame {
+    background: #111217; border: 1px solid #252830; border-radius: 8px;
+    overflow: hidden;
+}
+.dash-topbar {
+    background: #181b1f; padding: 8px 12px; border-bottom: 1px solid #252830;
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 0.65rem;
+}
+.dash-title { color: #d8d9da; font-weight: 600; }
+.dash-status { color: #73bf69; }
+.dash-body { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+
+.hero-mini {
+    padding: 8px; border-radius: 6px; border-left: 3px solid #73bf69;
+    background: #152818; font-size: 0.7rem;
+}
+.hero-mini .h { color: #73bf69; font-weight: 600; }
+.hero-mini .s { color: #8e9199; font-size: 0.62rem; }
+
+.metrics-mini { display: flex; flex-direction: column; gap: 4px; }
+.m-row {
+    display: flex; align-items: center; gap: 8px; font-size: 0.6rem;
+}
+.m-label { width: 28px; text-transform: uppercase; color: #8e9199; font-weight: 500; }
+.m-bar {
+    flex: 1; height: 5px; background: #1f2329; border-radius: 3px; overflow: hidden;
+}
+.m-fill { height: 100%; border-radius: 3px; }
+.m-fill.r { background: #5794f2; width: 31%; }
+.m-fill.l { background: #e5a43c; width: 66%; }
+.m-fill.h { background: #73bf69; width: 55%; }
+.m-num { color: #d8d9da; width: 50px; text-align: right; font-variant-numeric: tabular-nums; }
+
+.chart-mini {
+    background: #111217; border-radius: 6px; padding: 8px;
+    font-size: 0.6rem; color: #5c6068; text-align: center;
+}
+.chart-line {
+    display: flex; align-items: flex-end; gap: 3px; height: 48px;
+    justify-content: center; margin-top: 4px;
+}
+.chart-line span {
+    width: 6px; border-radius: 2px;
+    opacity: 0.6;
+}
+.chart-line .c1 { background: #5794f2; height: 40%; }
+.chart-line .c2 { background: #5794f2; height: 55%; }
+.chart-line .c3 { background: #5794f2; height: 30%; }
+.chart-line .c4 { background: #5794f2; height: 70%; }
+.chart-line .c5 { background: #5794f2; height: 45%; }
+.chart-line .c6 { background: #5794f2; height: 60%; }
+.chart-line .c7 { background: #5794f2; height: 35%; }
+.chart-line .c8 { background: #5794f2; height: 80%; }
+.chart-line .c9 { background: #5794f2; height: 50%; }
+.chart-line .c10 { background: #5794f2; height: 65%; }
+.chart-line .c11 { background: #5794f2; height: 40%; }
+.chart-line .c12 { background: #5794f2; height: 55%; }
+.chart-line .c13 { background: #5794f2; height: 70%; }
+.chart-line .c14 { background: #5794f2; height: 45%; }
+.chart-line .c15 { background: #5794f2; height: 60%; }
+
+.ctrl-mini {
+    display: flex; gap: 4px; margin-top: 4px;
+}
+.ctrl-mini button {
+    flex: 1; padding: 5px 0; border: none; border-radius: 4px;
+    font-size: 0.55rem; font-weight: 600; font-family: inherit; cursor: default;
+    color: #fff;
+}
+.ctrl-mini .in { background: #e24d4c; }
+.ctrl-mini .out { background: #73bf69; color: #111; }
+.ctrl-mini .auto { background: #5794f2; }
+
+/* COLUMN 2 -- Architecture */
+.arch { display: flex; flex-direction: column; gap: 12px; }
+.arch-block {
+    background: #111217; border: 1px solid #20242c; border-radius: 8px;
+    padding: 14px;
+}
+.arch-block-title {
+    font-size: 0.6rem; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.06em; color: #5794f2; margin-bottom: 8px;
+}
+.arch-row {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 0.7rem;
+}
+.arch-row .what { color: #d8d9da; }
+.arch-row .tech { color: #5c6068; font-size: 0.62rem; font-family: monospace; }
+.arch-arrow {
+    text-align: center; color: #5c6068; font-size: 0.8rem;
+    line-height: 1;
+}
+.arch-stack {
+    display: flex; align-items: center; gap: 8px; font-size: 0.65rem;
+}
+.arch-dot {
+    width: 8px; height: 8px; border-radius: 2px;
+}
+.arch-dot.python { background: #5794f2; }
+.arch-dot.sql { background: #e5a43c; }
+.arch-dot.js { background: #73bf69; }
+.arch-dot.hw { background: #e24d4c; }
+
+/* COLUMN 3 -- Key Points */
+.points { display: flex; flex-direction: column; gap: 14px; }
+.point {
+    display: flex; gap: 10px; align-items: flex-start;
+}
+.point-icon {
+    width: 28px; height: 28px; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.7rem; flex-shrink: 0;
+}
+.point-icon.a { background: #132033; color: #5794f2; }
+.point-icon.b { background: #152818; color: #73bf69; }
+.point-icon.c { background: #251e10; color: #e5a43c; }
+.point-icon.d { background: #2b1416; color: #e24d4c; }
+.point-text strong { display: block; font-size: 0.75rem; color: #fff; margin-bottom: 2px; }
+.point-text span { font-size: 0.62rem; color: #8e9199; line-height: 1.5; }
+
+/* FOOTER */
+.footer {
+    display: flex; justify-content: space-between; align-items: center;
+    border-top: 1px solid #20242c; padding-top: 16px;
+    font-size: 0.62rem; color: #5c6068;
+}
+
+/* Bar chart for column 3 */
+.stat-row { display: flex; gap: 12px; margin-top: 8px; }
+.stat {
+    flex: 1; text-align: center;
+}
+.stat-num { font-size: 1.3rem; font-weight: 700; color: #fff; }
+.stat-label { font-size: 0.58rem; color: #8e9199; margin-top: 2px; }
+
+@media (max-width: 1024px) {
+    .slide { padding: 24px; }
+    .body { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="slide">
+
+    <div class="header">
+        <h1>Software Prototype: Jemuran Dashboard</h1>
+        <span class="tag">PROTOTYPE V1</span>
+    </div>
+
+    <div class="body">
+
+        <!-- COL 1: UI Preview -->
+        <div class="column">
+            <div class="col-title">Dashboard UI</div>
+            <div class="dash-frame">
+                <div class="dash-topbar">
+                    <span class="dash-title">Jemuran Otomatis</span>
+                    <span class="dash-status">Online</span>
+                </div>
+                <div class="dash-body">
+                    <div class="hero-mini">
+                        <div class="h">Cuaca Aman</div>
+                        <div class="s">Jemuran di Luar &middot; Servo: OUT</div>
+                    </div>
+                    <div class="metrics-mini">
+                        <div class="m-row"><span class="m-label">Rain</span><div class="m-bar"><div class="m-fill r"></div></div><span class="m-num">320 / 1023</span></div>
+                        <div class="m-row"><span class="m-label">Lux</span><div class="m-bar"><div class="m-fill l"></div></div><span class="m-num">680 / 1023</span></div>
+                        <div class="m-row"><span class="m-label">Hum</span><div class="m-bar"><div class="m-fill h"></div></div><span class="m-num">55%</span></div>
+                    </div>
+                    <div class="chart-mini">
+                        Riwayat 1 Jam
+                        <div class="chart-line">
+                            <span class="c1"></span><span class="c2"></span><span class="c3"></span><span class="c4"></span><span class="c5"></span>
+                            <span class="c6"></span><span class="c7"></span><span class="c8"></span><span class="c9"></span><span class="c10"></span>
+                            <span class="c11"></span><span class="c12"></span><span class="c13"></span><span class="c14"></span><span class="c15"></span>
+                        </div>
+                    </div>
+                    <div class="ctrl-mini">
+                        <button class="in">Paksa Masuk</button>
+                        <button class="out">Paksa Keluar</button>
+                        <button class="auto">Mode Otomatis</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- COL 2: Architecture -->
+        <div class="column">
+            <div class="col-title">Arsitektur Software</div>
+            <div class="arch">
+                <div class="arch-block">
+                    <div class="arch-block-title">Data Pipeline</div>
+                    <div class="arch-row"><span class="what">Arduino + Sensor</span><span class="tech">C++</span></div>
+                    <div class="arch-arrow">|</div>
+                    <div class="arch-row"><span class="what">Serial Reader</span><span class="tech">Python + pyserial</span></div>
+                    <div class="arch-arrow">|</div>
+                    <div class="arch-row"><span class="what">SQLite Database</span><span class="tech">jemuran.db</span></div>
+                    <div class="arch-arrow">|</div>
+                    <div class="arch-row"><span class="what">Flask REST API</span><span class="tech">7 endpoints</span></div>
+                    <div class="arch-arrow">|</div>
+                    <div class="arch-row"><span class="what">Browser Dashboard</span><span class="tech">HTML + CSS + Chart.js</span></div>
+                </div>
+
+                <div class="arch-block">
+                    <div class="arch-block-title">Tech Stack</div>
+                    <div class="arch-row" style="margin-bottom:4px">
+                        <span class="what">Python 3.13</span><span class="tech">Flask + pyserial</span>
+                    </div>
+                    <div class="arch-row" style="margin-bottom:4px">
+                        <span class="what">SQLite</span><span class="tech">Zero-config DB</span>
+                    </div>
+                    <div class="arch-row" style="margin-bottom:4px">
+                        <span class="what">Chart.js 4.4</span><span class="tech">CDN, no build step</span>
+                    </div>
+                    <div class="arch-row">
+                        <span class="what">Inter Font</span><span class="tech">Google Fonts CDN</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- COL 3: Key Points -->
+        <div class="column">
+            <div class="col-title">Fitur Utama</div>
+            <div class="points">
+                <div class="point">
+                    <div class="point-icon a">R</div>
+                    <div class="point-text">
+                        <strong>Real-time Monitoring</strong>
+                        <span>Data sensor hujan, cahaya, kelembapan, dan posisi servo diperbarui setiap 3 detik melalui polling API otomatis.</span>
+                    </div>
+                </div>
+                <div class="point">
+                    <div class="point-icon b">M</div>
+                    <div class="point-text">
+                        <strong>Manual Override</strong>
+                        <span>Tiga tombol kontrol: Paksa Masuk, Paksa Keluar, Mode Otomatis. Setiap aksi tercatat di log event dengan feedback toast.</span>
+                    </div>
+                </div>
+                <div class="point">
+                    <div class="point-icon c">H</div>
+                    <div class="point-text">
+                        <strong>Histori & Chart</strong>
+                        <span>Line chart 1 jam terakhir menampilkan tren rain, lux, dan humidity. Timeline event mencatat semua kejadian sistem.</span>
+                    </div>
+                </div>
+                <div class="point">
+                    <div class="point-icon d">D</div>
+                    <div class="point-text">
+                        <strong>Demo Mode</strong>
+                        <span>Satu klik endpoint /api/demo/seed mengisi database dengan 60 menit data sintetis. Dashboard berfungsi penuh tanpa hardware.</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-row" style="margin-top:auto">
+                <div class="stat"><div class="stat-num">3</div><div class="stat-label">File Python</div></div>
+                <div class="stat"><div class="stat-num">7</div><div class="stat-label">API Endpoints</div></div>
+                <div class="stat"><div class="stat-num">2</div><div class="stat-label">Tabel SQLite</div></div>
+                <div class="stat"><div class="stat-num">0</div><div class="stat-label">npm / build</div></div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="footer">
+        <span>Jemuran Dashboard -- Software Prototype</span>
+        <span>github.com/HelloFarWorld/jemuran-dashboard</span>
+    </div>
+
+</div>
+
+</body>
+</html>
